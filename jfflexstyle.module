@@ -1,0 +1,78 @@
+<?php
+
+/**
+ * Implement & @see hook_view_api()
+ */
+function jfflexstyle_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'jfflexstyle'),
+  );
+}
+
+function jfflexstyle_image_style_url($uri, $attributes = array()) {
+  $style_name = jfflexstyle_get_style_name($attributes);
+  return image_style_url($style_name, $uri);
+}
+
+function jfflexstyle_image_style_path($uri, $attributes = array()) {
+  $style_name = jfflexstyle_get_style_name($attributes);
+  return image_style_path($style_name, $uri);
+}
+
+function jfflexstyle_get_style_name($attributes) {
+  foreach ($attributes as &$attribute) {
+    $attribute += array(
+      'name' => 'image_scale_and_crop',
+      'data' => array(
+      ),
+    );
+  }
+
+  $style_code = serialize($attributes);
+  // Rebuild
+  $existed_styles = variable_get('jfflexstyle_custom_styles', array());
+  $found = FALSE;
+  foreach ($existed_styles as $key => $style) {
+    if ($style['keycode'] === $style_code) {
+      $found = TRUE;
+      $style_name = $style['id'];
+      break ;
+    }
+  }
+  if (!$found) {
+    $style_name = 'jff_' . (count($existed_styles) + 1);
+    $existed_styles[] = array(
+      'effects' => $attributes,
+      'keycode' => $style_code,
+      'id' => $style_name,
+    );
+    variable_set('jfflexstyle_custom_styles', $existed_styles);
+  }
+
+  if (!image_style_load($style_name)) {
+    // Clear the styles cache
+    $styles = &drupal_static('image_styles');
+    $styles = array();
+    cache_clear_all('image_styles', 'cache');
+  }
+
+  return $style_name;
+}
+
+/**
+ * hook_image_default_styles
+ */
+function jfflexstyle_image_default_styles() {
+  $styles = array();
+
+  $existed_styles = variable_get('jfflexstyle_custom_styles', array());
+  foreach ($existed_styles as $key => $style) {
+    $styles[$style['id']] = array(
+      'label' => $style['id'],
+      'effects' => $style['effects']
+    );
+  }
+
+  return $styles;
+}

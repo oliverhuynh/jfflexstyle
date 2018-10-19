@@ -1,0 +1,7 @@
+name = Jufist Flex Image Styles
+description = Allow developers to use manual styles in the code.
+package = Jufist
+core = 7.x
+
+chcore[] = core
+files[] = jf_views_handler_field_image.inc
